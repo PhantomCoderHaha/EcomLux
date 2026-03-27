@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certiq — Authenticated Resale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0f0e0c;--ink2:#2d2b27;--ink3:#6b6660;--ink4:#a09b95;
+  --cream:#faf8f4;--cream2:#f2efe9;--cream3:#e8e3da;
+  --gold:#c9a96e;--gold2:#e8d5b0;--gold3:#7a6340;
+  --green:#3d7a5a;--green-bg:#edf5f0;
+  --red:#9b3a3a;--red-bg:#fdf0f0;
+  --blue:#2d5f8a;--blue-bg:#edf3f9;
+  --amber:#8a6d2d;--amber-bg:#fdf6e8;
+  --r:6px;--r2:12px;--r3:20px;
+  --shadow:0 2px 16px rgba(15,14,12,.06);
+  --shadow2:0 8px 40px rgba(15,14,12,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+#role-screen{position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:48px;padding:40px}
+.role-logo{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:var(--cream);letter-spacing:.06em}
+.role-logo span{color:var(--gold)}
+.role-tagline{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink4);text-align:center}
+.role-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;max-width:920px}
+.role-card{background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.1);border-radius:var(--r2);padding:32px 24px;cursor:pointer;transition:all .25s;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.role-card:hover{background:rgba(201,169,110,.1);border-color:var(--gold);transform:translateY(-4px);box-shadow:0 16px 48px rgba(201,169,110,.15)}
+.role-icon{font-size:32px;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center}
+.role-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--cream)}
+.role-desc{font-size:11px;color:var(--ink4);letter-spacing:.04em;line-height:1.5}
+#app{display:none;height:100%;flex-direction:column}
+#app.visible{display:flex}
+.topbar{height:54px;background:var(--ink);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.topbar-logo{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--cream);letter-spacing:.06em}
+.topbar-logo span{color:var(--gold)}
+.topbar-sep{width:1px;height:16px;background:rgba(255,255,255,.1)}
+.topbar-role{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);padding:3px 10px;border:0.5px solid rgba(201,169,110,.3);border-radius:20px}
+.topbar-user{font-size:12px;color:var(--ink4)}
+.spacer{flex:1}
+.topbar-nav{display:flex;gap:2px}
+.tnav{background:none;border:none;color:var(--ink4);font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.1em;padding:6px 14px;border-radius:var(--r);cursor:pointer;transition:all .2s;text-transform:uppercase;font-weight:500}
+.tnav:hover,.tnav.active{color:var(--cream);background:rgba(255,255,255,.08)}
+.tnav.active{color:var(--gold)}
+.switch-btn{font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:none;border:0.5px solid rgba(255,255,255,.15);color:var(--ink4);padding:5px 12px;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;margin-left:8px}
+.switch-btn:hover{border-color:var(--gold);color:var(--gold)}
+.main{flex:1;overflow:hidden;display:flex}
+.page{display:none;flex:1;overflow-y:auto;padding:32px;flex-direction:column;gap:20px}
+.page.active{display:flex}
+.chat-layout{display:flex;flex:1;overflow:hidden}
+.chat-list-panel{width:270px;border-right:0.5px solid var(--cream3);overflow-y:auto;flex-shrink:0;background:#fff}
+.chat-main-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--cream)}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--ink);line-height:1.1}
+.page-title em{color:var(--gold);font-style:italic}
+.slabel{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.stitle{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--ink);margin-bottom:14px}
+.card{background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);padding:22px;box-shadow:var(--shadow)}
+.card-sm{background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r);padding:14px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);padding:18px;box-shadow:var(--shadow)}
+.stat-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink4);margin-bottom:5px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--ink);line-height:1}
+.stat-sub{font-size:11px;color:var(--ink4);margin-top:3px}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.pcard{background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:all .25s}
+.pcard:hover{transform:translateY(-3px);box-shadow:var(--shadow2)}
+.pimg{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;font-size:64px;position:relative;overflow:hidden}
+.pfav{position:absolute;top:10px;right:10px;width:30px;height:30px;background:rgba(255,255,255,.9);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s}
+.pfav:hover{transform:scale(1.15)}
+.pbadge{position:absolute;bottom:10px;left:10px}
+.pbody{padding:14px}
+.pbrand{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
+.pname{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;color:var(--ink);margin-bottom:3px;line-height:1.2}
+.pmeta{font-size:11px;color:var(--ink4);margin-bottom:10px}
+.pfooter{display:flex;align-items:center;justify-content:space-between}
+.pprice{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--ink)}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:20px}
+.badge::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+.badge-auth{background:var(--green-bg);color:var(--green)}
+.badge-pending{background:var(--amber-bg);color:var(--amber)}
+.badge-rejected{background:var(--red-bg);color:var(--red)}
+.badge-sold{background:var(--blue-bg);color:var(--blue)}
+.badge-listed{background:var(--green-bg);color:var(--green)}
+.badge-plain{background:var(--ink);color:var(--cream)}
+.badge-plain::before{display:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;border:none;border-radius:var(--r);padding:9px 18px;transition:all .2s;white-space:nowrap}
+.btn-primary{background:var(--ink);color:var(--cream)}
+.btn-primary:hover{background:var(--ink2);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:var(--gold3)}
+.btn-outline{background:transparent;border:0.5px solid var(--ink3);color:var(--ink2)}
+.btn-outline:hover{border-color:var(--ink);color:var(--ink)}
+.btn-ghost{background:transparent;border:0.5px solid var(--cream3);color:var(--ink3)}
+.btn-ghost:hover{border-color:var(--ink3);color:var(--ink2)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:0.5px solid rgba(155,58,58,.2)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-success{background:var(--green-bg);color:var(--green);border:0.5px solid rgba(61,122,90,.2)}
+.btn-success:hover{background:var(--green);color:#fff}
+.btn-sm{padding:5px 12px;font-size:9px}
+.btn-lg{padding:13px 28px;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.flabel{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink4)}
+.finput,.fselect,.ftextarea{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r);padding:9px 12px;outline:none;width:100%;transition:border-color .2s}
+.finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--gold)}
+.finput::placeholder,.ftextarea::placeholder{color:var(--cream3)}
+.ftextarea{resize:vertical;min-height:72px}
+.fselect{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23a09b95' stroke-width='0.8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+.table{width:100%;border-collapse:collapse}
+.table th{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink4);text-align:left;padding:9px 14px;border-bottom:0.5px solid var(--cream3)}
+.table td{font-size:13px;color:var(--ink2);padding:11px 14px;border-bottom:0.5px solid var(--cream3);vertical-align:middle}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:var(--cream)}
+.cli{padding:12px 14px;border-bottom:0.5px solid var(--cream3);cursor:pointer;transition:background .15s;display:flex;gap:9px;align-items:flex-start}
+.cli:hover{background:var(--cream2)}
+.cli.active{background:var(--cream2);border-left:2px solid var(--gold)}
+.cavatar{width:34px;height:34px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:0.5px solid var(--cream3)}
+.cli-info{flex:1;min-width:0}
+.cli-name{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:1px}
+.cli-preview{font-size:11px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cli-time{font-size:10px;color:var(--ink4);flex-shrink:0}
+.chat-header{padding:12px 18px;border-bottom:0.5px solid var(--cream3);display:flex;align-items:center;gap:10px;background:#fff;flex-shrink:0}
+.chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:68%;padding:10px 13px;border-radius:var(--r2);font-size:13px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
+.bubble.mine{background:var(--ink);color:var(--cream);align-self:flex-end;border-bottom-right-radius:4px}
+.bubble.theirs{background:#fff;color:var(--ink2);align-self:flex-start;border-bottom-left-radius:4px;border:0.5px solid var(--cream3)}
+.chat-input-row{padding:10px 16px;border-top:0.5px solid var(--cream3);display:flex;gap:8px;background:#fff;flex-shrink:0}
+.chat-input{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;border:0.5px solid var(--cream3);border-radius:var(--r3);padding:9px 14px;outline:none;background:var(--cream)}
+.chat-input:focus{border-color:var(--gold)}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,14,12,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:var(--r2);padding:28px;max-width:540px;width:100%;max-height:88vh;overflow-y:auto;transform:translateY(12px);transition:transform .2s;box-shadow:var(--shadow2)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:var(--ink);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--ink4);margin-bottom:20px}
+.modal-close{float:right;background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink4);line-height:1;margin-top:2px}
+.photo-chain{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.pstep{border:0.5px solid var(--cream3);border-radius:var(--r);overflow:hidden}
+.pstep-img{height:72px;display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;background:var(--cream2)}
+.pstep-num{position:absolute;top:5px;left:5px;width:18px;height:18px;background:var(--ink);color:var(--cream);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.pstep-body{padding:7px 9px}
+.pstep-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:2px}
+.pstep-desc{font-size:10px;color:var(--ink4)}
+.pstep.done{border-color:rgba(61,122,90,.25);background:var(--green-bg)}
+.pstep.done .pstep-num{background:var(--green)}
+.divider{height:0.5px;background:var(--cream3);margin:16px 0}
+.empty{text-align:center;padding:48px 20px;color:var(--ink4)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+.row{display:flex;gap:12px;align-items:center}
+.row-b{display:flex;justify-content:space-between;align-items:center}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--cream2);border:0.5px solid var(--cream3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.notif{position:fixed;bottom:22px;right:22px;background:var(--ink);color:var(--cream);padding:12px 18px;border-radius:var(--r);font-size:13px;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;max-width:340px;box-shadow:var(--shadow2)}
+.notif.show{transform:translateY(0);opacity:1}
+.notif.ok{background:var(--green)}
+.notif.err{background:var(--red)}
+.fade{animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div id="role-screen">
+  <div style="text-align:center">
+    <div class="role-logo">cert<span>iq</span></div>
+    <div class="role-tagline" style="margin-top:10px">Authenticated Resale Platform &nbsp;·&nbsp; Interactive Prototype</div>
+  </div>
+  <div class="role-grid">
+    <div class="role-card" onclick="selectRole('buyer')">
+      <div class="role-icon">🛍️</div>
+      <div class="role-name">Buyer</div>
+      <div class="role-desc">Browse & purchase authenticated luxury goods</div>
+    </div>
+    <div class="role-card" onclick="selectRole('seller')">
+      <div class="role-icon">📦</div>
+      <div class="role-name">Individual Seller</div>
+      <div class="role-desc">Submit items for authentication & list for sale</div>
+    </div>
+    <div class="role-card" onclick="selectRole('auth')">
+      <div class="role-icon">🔍</div>
+      <div class="role-name">Auth Store</div>
+      <div class="role-desc">Authenticate items & manage consignment inventory</div>
+    </div>
+    <div class="role-card" onclick="selectRole('admin')">
+      <div class="role-icon">⚙️</div>
+      <div class="role-name">Admin</div>
+      <div class="role-desc">Platform oversight, users & fee configuration</div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.06em">All roles share the same live data — actions in one role appear instantly in others</div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">cert<span>iq</span></div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-role" id="rpill"></div>
+    <div class="topbar-user" id="upill"></div>
+    <div class="spacer"></div>
+    <div class="topbar-nav" id="tnav"></div>
+    <button class="switch-btn" onclick="switchRole()">Switch Role</button>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+
+<div class="modal-overlay" id="moverlay" onclick="closeMout(event)">
+  <div class="modal" id="mbox"></div>
+</div>
+<div class="notif" id="notif"></div>
+
+<script>
+const SK='certiq_v4';
+// Clear any stale data from older prototype versions
+['certiq_v1','certiq_v2','certiq_v3'].forEach(k=>localStorage.removeItem(k));
+function defaultDB(){
+  const now=Date.now();
+  const d=days=>new Date(now-days*86400000).toISOString();
+  return{
+    users:[
+      {id:'b1',role:'buyer',name:'Amelia Chen',email:'amelia@email.com',av:'👩',at:d(30)},
+      {id:'b2',role:'buyer',name:'Marcus Reid',email:'marcus@email.com',av:'👨',at:d(45)},
+      {id:'b3',role:'buyer',name:'Sofia Nair',email:'sofia@email.com',av:'👩🏽',at:d(12)},
+      {id:'s1',role:'seller',name:'James Tan',email:'james@email.com',av:'🧑',at:d(60)},
+      {id:'s2',role:'seller',name:'Priya Mehta',email:'priya@email.com',av:'👩🏽',at:d(90)},
+      {id:'s3',role:'seller',name:'Lucas Webb',email:'lucas@email.com',av:'👨🏻',at:d(15)},
+      {id:'a1',role:'auth',name:'LuxVerify KL',email:'luxverify@store.com',av:'🏪',at:d(120)},
+      {id:'a2',role:'auth',name:'AuthHouse PJ',email:'authhouse@store.com',av:'🏬',at:d(200)},
+      {id:'adm1',role:'admin',name:'Platform Admin',email:'admin@certiq.com',av:'⚙️',at:d(300)},
+    ],
+    products:[
+      {id:'p1',sid:'s1',aid:'a1',name:'Neverfull MM Monogram',brand:'Louis Vuitton',cat:'Handbags',desc:'Beautiful Neverfull MM in classic monogram canvas. Date code TH3121.',price:1840,fee:80,cond:'Excellent',status:'listed',p1:'done',p2:'done',p3:null,cat_at:d(20),auth_at:d(18),list_at:d(18),rating:'Excellent — stitching intact, hardware clean, canvas supple'},
+      {id:'p2',sid:'s2',aid:'a1',name:'Classic Flap Medium Caviar',brand:'Chanel',cat:'Handbags',desc:'Pristine Chanel CF Medium in black caviar with gold hardware. Series 28.',price:7200,fee:120,cond:'Pristine',status:'listed',p1:'done',p2:'done',p3:null,cat_at:d(14),auth_at:d(12),list_at:d(12),rating:'Pristine — no visible wear, dust bag & authenticity card included'},
+      {id:'p3',sid:'s1',aid:'a2',name:'Evelyne PM Clemence',brand:'Hermès',cat:'Handbags',desc:'Hermès Evelyne PM in Etoupe clemence leather. R stamp (2014).',price:3600,fee:120,cond:'Very Good',status:'listed',p1:'done',p2:'done',p3:null,cat_at:d(25),auth_at:d(22),list_at:d(22),rating:'Very Good — minor interior scuffing, exterior pristine'},
+      {id:'p4',sid:'s2',aid:'a2',name:'Speedy 30 Damier Ebene',brand:'Louis Vuitton',cat:'Handbags',desc:'LV Speedy 30 in Damier Ebene. Comes with padlock, key & dustbag.',price:980,fee:80,cond:'Good',status:'listed',p1:'done',p2:'done',p3:null,cat_at:d(30),auth_at:d(28),list_at:d(28),rating:'Good — handles show patina, canvas in good shape'},
+      {id:'p5',sid:'s3',aid:'a1',name:'Air Jordan 1 Retro High OG Chicago',brand:'Nike',cat:'Sneakers',desc:'Deadstock AJ1 Chicago 2022. Size US10. Never worn.',price:560,fee:40,cond:'Pristine',status:'listed',p1:'done',p2:'done',p3:null,cat_at:d(10),auth_at:d(8),list_at:d(8),rating:'Pristine — deadstock, box included'},
+      {id:'p6',sid:'s3',aid:'a1',name:'GG Marmont Small Matelassé',brand:'Gucci',cat:'Handbags',desc:'Gucci GG Marmont in black matelassé leather. Gold hardware.',price:1100,fee:80,cond:'Excellent',status:'pending_auth',p1:'done',p2:null,p3:null,cat_at:d(3),auth_at:null,list_at:null,rating:null},
+      {id:'p7',sid:'s1',aid:'a2',name:'Submariner Date Steel',brand:'Rolex',cat:'Watches',desc:'Rolex Submariner 124060. Box & papers 2022.',price:14500,fee:200,cond:'Excellent',status:'pending_auth',p1:'done',p2:null,p3:null,cat_at:d(2),auth_at:null,list_at:null,rating:null},
+      {id:'p8',sid:'s2',aid:'a1',bid:'b1',name:'Birkin 30 Togo Gold',brand:'Hermès',cat:'Handbags',desc:'Hermès Birkin 30 in Gold togo. W stamp.',price:22000,fee:200,cond:'Excellent',status:'sold',p1:'done',p2:'done',p3:'done',cat_at:d(60),auth_at:d(55),list_at:d(55),sold_at:d(40),rating:'Excellent — slight wear on corners, interior pristine'},
+      {id:'p9',sid:'s1',aid:'a2',bid:'b2',name:'Royal Oak 15500ST Blue',brand:'Audemars Piguet',cat:'Watches',desc:'AP Royal Oak 15500ST Blue dial. Full set.',price:38000,fee:200,cond:'Pristine',status:'sold',p1:'done',p2:'done',p3:'done',cat_at:d(45),auth_at:d(42),list_at:d(42),sold_at:d(20),rating:'Pristine — worn fewer than 10 times'},
+      {id:'p10',sid:'s3',aid:'a1',bid:'b3',name:'Yeezy Boost 350 V2 Zebra',brand:'Adidas',cat:'Sneakers',desc:'Yeezy 350 Zebra, size US9. Worn twice.',price:320,fee:40,cond:'Very Good',status:'sold',p1:'done',p2:'done',p3:'done',cat_at:d(35),auth_at:d(33),list_at:d(33),sold_at:d(15),rating:'Very Good — minimal creasing'},
+      {id:'p11',sid:'s2',aid:'a2',name:'Classic Flap Medium (Replica)',brand:'Chanel',cat:'Handbags',desc:'Seller claimed authentic Chanel Classic Flap.',price:4500,fee:120,cond:'Good',status:'rejected',p1:'done',p2:'done',p3:null,cat_at:d(50),auth_at:d(47),list_at:null,rej_at:d(47),rating:null,rej:'Item determined to be replica. Stitching pattern inconsistent with genuine, CC clasp underweight, serial sticker missing protective film.'},
+      {id:'p12',sid:'s3',aid:'a1',name:'Datejust 41 (Counterfeit)',brand:'Rolex',cat:'Watches',desc:'Claimed Rolex Datejust 41, 2019.',price:8000,fee:200,cond:'Good',status:'rejected',p1:'done',p2:'done',p3:null,cat_at:d(40),auth_at:d(37),list_at:null,rej_at:d(37),rating:null,rej:'Confirmed counterfeit. Movement inconsistent with genuine Rolex calibre. Caseback engraving depth irregular. Serial number verified fake.'},
+    ],
+    orders:[
+      {id:'o1',pid:'p8',bid:'b1',sid:'s2',total:22028,status:'delivered',at:d(40)},
+      {id:'o2',pid:'p9',bid:'b2',sid:'s1',total:38028,status:'delivered',at:d(20)},
+      {id:'o3',pid:'p10',bid:'b3',sid:'s3',total:348,status:'delivered',at:d(15)},
+    ],
+    chats:[
+      {id:'c1',participants:['s1','a1'],pid:'p1',msgs:[
+        {from:'a1',text:'Hi James! Your Neverfull MM has arrived. Starting authentication now.',t:d(18)},
+        {from:'a1',text:'Authentication complete ✓\n\nCondition: Excellent\nRating: Stitching intact, hardware clean, canvas supple\nEstimated value: $1,800–$1,900\n\nWould you like to proceed with listing at $1,840?',t:d(18)},
+        {from:'s1',text:'Yes, please go ahead and list it!',t:d(17)},
+        {from:'a1',text:'Perfect. Your item is now live on Certiq. We\'ll notify you the moment it sells. 🎉',t:d(17)},
+      ]},
+      {id:'c2',participants:['s2','a1'],pid:'p2',msgs:[
+        {from:'a1',text:'Priya, your Chanel Classic Flap has been received and authenticated. Pristine condition — this is a beautiful piece.',t:d(12)},
+        {from:'a1',text:'Listed at $7,200. Chanel CFs typically sell within 2–4 weeks on our platform.',t:d(12)},
+        {from:'s2',text:'Amazing! Thank you so much.',t:d(11)},
+      ]},
+      {id:'c3',participants:['s2','a2'],pid:'p11',msgs:[
+        {from:'a2',text:'Hi Priya, we\'ve completed our assessment on your Chanel CF submission.',t:d(47)},
+        {from:'a2',text:'Unfortunately we cannot authenticate this item. Our assessment indicates this is a replica.\n\nReason: Stitching pattern inconsistent, CC clasp underweight, serial sticker missing protective film.\n\nPlease collect the item at your convenience. The auth fee is non-refundable.',t:d(47)},
+        {from:'s2',text:'Are you sure? I bought this from a boutique in Paris...',t:d(46)},
+        {from:'a2',text:'We understand this is difficult to hear. Our findings are conclusive. We can provide a written report if needed.',t:d(46)},
+      ]},
+      {id:'c4',participants:['s3','a1'],pid:'p6',msgs:[
+        {from:'s3',text:'Hi, I\'ve just dropped off the Gucci Marmont. Reference CQ-P6.',t:d(3)},
+        {from:'a1',text:'Got it Lucas! Item received. Authentication begins tomorrow morning. Does it come with dustbag?',t:d(3)},
+        {from:'s3',text:'Yes, dustbag included. No auth card though.',t:d(2)},
+        {from:'a1',text:'Perfect, noted. We\'ll update you once we\'re done.',t:d(2)},
+      ]},
+    ],
+    fees:{platform:8,authStore:12,storage:90},
+    authFeeTable:{'Handbags':{'Louis Vuitton':80,'Chanel':120,'Hermès':120,'Gucci':80,'Other':60},'Watches':{'Rolex':200,'Audemars Piguet':200,'Other':150},'Sneakers':{'Nike':40,'Adidas':40,'Other':30},'Accessories':{'default':50}},
+  };
+}
+
+let DB=getDB();
+let role=null,user=null,page=null,chatId=null;
+let mktFilter='',mktSearch='';
+
+function getDB(){
+  try{
+    const d=localStorage.getItem(SK);
+    if(!d)return defaultDB();
+    const parsed=JSON.parse(d);
+    // Migration guard — if fees object is missing or malformed, reset to defaults
+    if(!parsed.fees||typeof parsed.fees.platform==='undefined'||!parsed.authFeeTable){
+      localStorage.removeItem(SK);
+      return defaultDB();
+    }
+    return parsed;
+  }catch{return defaultDB();}
+}
+function save(){localStorage.setItem(SK,JSON.stringify(DB));}
+function resetDB(){localStorage.removeItem(SK);location.reload();}
+function gp(id){return DB.products.find(p=>p.id===id);}
+function gu(id){return DB.users.find(u=>u.id===id);}
+function fmt(n){return'$'+Number(n).toLocaleString();}
+function ago(iso){const diff=Date.now()-new Date(iso).getTime();const m=Math.floor(diff/60000),h=Math.floor(m/60),d=Math.floor(h/24);if(d>0)return d+'d ago';if(h>0)return h+'h ago';if(m>0)return m+'m ago';return'just now';}
+function sbadge(s){const cl={listed:'badge-listed',pending_auth:'badge-pending',sold:'badge-sold',rejected:'badge-rejected'};const lb={listed:'Listed',pending_auth:'Pending Auth',sold:'Sold',rejected:'Rejected'};return`<span class="badge ${cl[s]||'badge-pending'}">${lb[s]||s}</span>`;}
+function pemi(c){return{Handbags:'👜',Watches:'⌚',Sneakers:'👟',Accessories:'💍'}[c]||'📦';}
+function pbg(c){return{Handbags:'#f0ece6',Watches:'#e6eaf0',Sneakers:'#eaf0e6',Accessories:'#f0e6ee'}[c]||'#f0ece6';}
+function pico(s){return s==='done'?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--cream3)">○</span>';}
+
+function notify(msg,type=''){const n=document.getElementById('notif');n.textContent=msg;n.className='notif show '+(type==='ok'?'ok':type==='err'?'err':'');setTimeout(()=>n.className='notif',3200);}
+function openM(html){document.getElementById('mbox').innerHTML=html;document.getElementById('moverlay').classList.add('open');}
+function closeM(){document.getElementById('moverlay').classList.remove('open');}
+function closeMout(e){if(e.target.id==='moverlay')closeM();}
+
+// ── ROLE SELECT ──
+function selectRole(r){
+  role=r;
+  const ru=DB.users.filter(u=>u.role===r);
+  if(!ru.length)return;
+  user=ru[0];
+  document.getElementById('role-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('rpill').textContent={buyer:'Buyer',seller:'Individual Seller',auth:'Auth Store',admin:'Admin'}[r];
+  document.getElementById('upill').textContent='— '+user.name;
+  buildNav();
+  showPage(navPages()[0].id);
+}
+function switchRole(){document.getElementById('role-screen').style.display='flex';document.getElementById('app').classList.remove('visible');role=null;user=null;mktFilter='';mktSearch='';chatId=null;}
+function navPages(){
+  if(role==='buyer')return[{id:'marketplace',l:'Marketplace'},{id:'my-orders',l:'My Orders'},{id:'chat-buyer',l:'Messages'}];
+  if(role==='seller')return[{id:'store-mgr',l:'My Items'},{id:'submit-item',l:'Submit Item'},{id:'chat-seller',l:'Messages'},{id:'seller-earn',l:'Earnings'}];
+  if(role==='auth')return[{id:'auth-panel',l:'Auth Panel'},{id:'auth-inv',l:'Inventory'},{id:'auth-listings',l:'My Listings'},{id:'chat-auth',l:'Messages'},{id:'auth-earn',l:'Earnings'}];
+  if(role==='admin')return[{id:'adm-overview',l:'Overview'},{id:'adm-users',l:'Users'},{id:'adm-products',l:'Products'},{id:'adm-config',l:'Config'}];
+  return[];
+}
+function buildNav(){
+  document.getElementById('tnav').innerHTML=navPages().map(p=>`<button class="tnav" onclick="showPage('${p.id}')" id="n${p.id}">${p.l}</button>`).join('');
+}
+function showPage(id){
+  DB=getDB();page=id;
+  document.querySelectorAll('.tnav').forEach(b=>b.classList.remove('active'));
+  const nb=document.getElementById('n'+id);if(nb)nb.classList.add('active');
+  const m=document.getElementById('main');m.innerHTML='';
+  const map={
+    'marketplace':rMarketplace,'my-orders':rOrders,'chat-buyer':()=>rChat('buyer'),
+    'store-mgr':rStoreMgr,'submit-item':rSubmitItem,'chat-seller':()=>rChat('seller'),'seller-earn':rSellerEarn,
+    'auth-panel':rAuthPanel,'auth-inv':rAuthInv,'auth-listings':rAuthListings,'auth-list-item':rAuthListItem,'chat-auth':()=>rChat('auth'),'auth-earn':rAuthEarn,
+    'adm-overview':rAdmOverview,'adm-users':rAdmUsers,'adm-products':rAdmProducts,'adm-config':rAdmConfig,
+  };
+  if(map[id])map[id]();
+}
+
+// ── MARKETPLACE ──
+function rMarketplace(){
+  const m=document.getElementById('main');
+  m.innerHTML=`<div class="page active fade"><div class="row-b" style="margin-bottom:20px"><div><div class="slabel">Certiq Marketplace</div><div class="page-title">Authenticated <em>Luxury</em></div></div><div class="row" style="gap:8px"><select class="fselect" style="width:140px" onchange="fmkt(this.value)" id="mf"><option value="">All Categories</option><option>Handbags</option><option>Watches</option><option>Sneakers</option><option>Accessories</option></select><input class="finput" style="width:190px" placeholder="Search…" oninput="smkt(this.value)" id="ms"></div></div><div class="product-grid" id="mgrid"></div></div>`;
+  document.getElementById('mf').value=mktFilter;
+  document.getElementById('ms').value=mktSearch;
+  applyMktFilters();
+}
+function applyMktFilters(){
+  let ps=DB.products.filter(p=>p.status==='listed');
+  if(mktFilter)ps=ps.filter(p=>p.cat===mktFilter);
+  if(mktSearch)ps=ps.filter(p=>p.name.toLowerCase().includes(mktSearch)||p.brand.toLowerCase().includes(mktSearch));
+  renderMktGrid(ps);
+}
+function fmkt(v){mktFilter=v;applyMktFilters();}
+function smkt(v){mktSearch=v.toLowerCase();applyMktFilters();}
+function renderMktGrid(prods){
+  const g=document.getElementById('mgrid');
+  if(!prods.length){g.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div>No items found</div></div>`;return;}
+  g.innerHTML=prods.map(p=>`<div class="pcard" onclick="showPD('${p.id}')"><div class="pimg" style="background:${pbg(p.cat)}"><div>${pemi(p.cat)}</div><button class="pfav">♡</button><div class="pbadge"><span class="badge badge-auth">Authenticated</span></div></div><div class="pbody"><div class="pbrand">${p.brand}</div><div class="pname">${p.name}</div><div class="pmeta">${p.cond} · ${p.cat}</div><div class="pfooter"><div class="pprice">${fmt(p.price)}</div><button class="btn btn-primary btn-sm" onclick="event.stopPropagation();buyNow('${p.id}')">Buy Now</button></div></div></div>`).join('');
+}
+
+function showPD(pid){
+  DB=getDB();const p=gp(pid);const seller=gu(p.sid);const store=gu(p.aid);
+  const isStoreOwned=p.authSource==='store_owned';
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="slabel">${p.brand}</div><div class="modal-title">${p.name}</div><div class="modal-sub">${p.cat} · ${p.cond} condition</div>
+    <div style="background:${pbg(p.cat)};border-radius:var(--r);height:160px;display:flex;align-items:center;justify-content:center;font-size:80px;margin-bottom:18px">${pemi(p.cat)}</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div><div class="flabel">Authenticated by</div><div style="font-size:13px;font-weight:500;margin-top:3px">${store.av} ${store.name}${isStoreOwned?` <span style="font-size:10px;color:var(--green);font-weight:400">(in-house)</span>`:''}</div></div>
+      <div><div class="flabel">Condition</div><div style="font-size:13px;font-weight:500;margin-top:3px">${p.cond}</div></div>
+      <div style="grid-column:span 2"><div class="flabel">Auth Report</div><div style="font-size:12px;color:var(--ink4);margin-top:3px;line-height:1.6">${p.rating||'—'}</div></div>
+    </div>
+    <div class="flabel">Description</div><div style="font-size:13px;color:var(--ink3);margin:5px 0 16px;line-height:1.7">${p.desc}</div>
+    <div class="photo-chain">
+      <div class="pstep ${p.p1?'done':''}"><div class="pstep-img">${p.p1?'📸':'📷'}<div class="pstep-num">1</div></div><div class="pstep-body"><div class="pstep-lbl">${isStoreOwned?'In-house photo':'Pre drop-off'}</div><div class="pstep-desc">${isStoreOwned?'Store documented':'Seller documented'}</div></div></div>
+      <div class="pstep ${p.p2?'done':''}"><div class="pstep-img">${p.p2?'✅':'🔍'}<div class="pstep-num">2</div></div><div class="pstep-body"><div class="pstep-lbl">Post auth</div><div class="pstep-desc">Store verified</div></div></div>
+      <div class="pstep ${p.p3?'done':''}"><div class="pstep-img">${p.p3?'📦':'⏳'}<div class="pstep-num">3</div></div><div class="pstep-body"><div class="pstep-lbl">Pre dispatch</div><div class="pstep-desc">${p.p3?'Confirmed':'On sale'}</div></div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="row-b">
+      <div><div class="flabel">Price</div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300">${fmt(p.price)}</div><div style="font-size:11px;color:var(--ink4)">+ shipping at checkout</div></div>
+      ${p.status==='listed'?`<button class="btn btn-gold btn-lg" onclick="buyNow('${p.id}');closeM()">Purchase Now</button>`:`<span class="badge badge-sold" style="padding:8px 14px;font-size:11px">Sold</span>`}
+    </div>`);
+}
+
+function buyNow(pid){
+  DB=getDB();const p=gp(pid);
+  if(p.status!=='listed'){notify('Item no longer available','err');return;}
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="modal-title">Confirm Purchase</div><div class="modal-sub">${p.brand} — ${p.name}</div>
+    <div class="card-sm" style="margin-bottom:18px">
+      <div class="row-b" style="margin-bottom:8px"><span style="color:var(--ink4);font-size:13px">Item price</span><span style="font-weight:500">${fmt(p.price)}</span></div>
+      <div class="row-b" style="margin-bottom:8px"><span style="color:var(--ink4);font-size:13px">Shipping (DHL)</span><span style="font-weight:500">$28</span></div>
+      <div class="divider"></div>
+      <div class="row-b"><span style="font-weight:600">Total</span><span style="font-family:'Cormorant Garamond',serif;font-size:22px">${fmt(p.price+28)}</span></div>
+    </div>
+    <div class="form-group"><div class="flabel">Delivery Address</div><input class="finput" id="baddr" value="12 Jalan Bukit Bintang, Kuala Lumpur 55100"></div>
+    <div style="font-size:11px;color:var(--ink4);margin-bottom:18px;line-height:1.7">Seller will be notified. They must submit a pre-dispatch photo to unlock courier booking. Estimated delivery: 2–4 business days.</div>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn btn-ghost" onclick="closeM()">Cancel</button><button class="btn btn-gold btn-lg" onclick="confirmBuy('${pid}')">Confirm & Pay</button></div>`);
+}
+
+function confirmBuy(pid){
+  DB=getDB();const p=gp(pid);
+  if(p.status!=='listed'){notify('Already sold','err');closeM();return;}
+  p.status='sold';p.bid=user.id;p.sold_at=new Date().toISOString();
+  DB.orders.push({id:'o'+Date.now(),pid,bid:user.id,sid:p.sid,total:p.price+28,status:'pending_dispatch',at:new Date().toISOString()});
+  save();closeM();notify('🎉 Purchase confirmed! Awaiting dispatch.','ok');showPage('my-orders');
+}
+
+// ── ORDERS ──
+function rOrders(){
+  DB=getDB();const m=document.getElementById('main');
+  const ords=DB.orders.filter(o=>o.bid===user.id);
+  m.innerHTML=`<div class="page active fade"><div class="slabel">Buyer Portal</div><div class="page-title" style="margin-bottom:20px">My <em>Orders</em></div>
+    ${!ords.length?`<div class="empty"><div class="empty-icon">🛍️</div><div>No orders yet. Browse the marketplace!</div></div>`:
+    ords.map(o=>{const p=gp(o.pid);const sm={pending_dispatch:'Awaiting Dispatch',shipped:'Shipped',delivered:'Delivered'};const bc={pending_dispatch:'badge-pending',shipped:'badge-listed',delivered:'badge-sold'};
+    return`<div class="card" style="display:flex;gap:18px;align-items:center"><div style="width:68px;height:68px;border-radius:var(--r);background:${pbg(p.cat)};display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0">${pemi(p.cat)}</div><div style="flex:1"><div style="font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:3px">${p.brand}</div><div style="font-family:'Cormorant Garamond',serif;font-size:19px;margin-bottom:4px">${p.name}</div><div class="row" style="gap:10px"><span class="badge ${bc[o.status]}">${sm[o.status]||o.status}</span><span style="font-size:11px;color:var(--ink4)">${ago(o.at)}</span></div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px"><div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300">${fmt(o.total)}</div><div style="font-size:11px;color:var(--ink4)">incl. shipping</div></div>${o.status==='shipped'?`<button class="btn btn-success btn-sm" onclick="markDelivered('${o.id}')">Mark Received ✓</button>`:''}</div></div>`;
+    }).join('')}
+  </div>`;
+}
+
+function markDelivered(oid){
+  DB=getDB();const o=DB.orders.find(o=>o.id===oid);if(!o)return;
+  o.status='delivered';save();notify('Item marked as received. Enjoy! 🎉','ok');rOrders();
+}
+
+// ── STORE MANAGER ──
+function rStoreMgr(){
+  DB=getDB();const m=document.getElementById('main');
+  const items=DB.products.filter(p=>p.sid===user.id);
+  const stats={total:items.length,listed:items.filter(p=>p.status==='listed').length,sold:items.filter(p=>p.status==='sold').length,pending:items.filter(p=>p.status==='pending_auth').length};
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Store Manager</div><div class="page-title" style="margin-bottom:20px">My <em>Items</em></div>
+    <div class="stats-row" style="margin-bottom:20px">
+      <div class="stat"><div class="stat-lbl">Total Items</div><div class="stat-val">${stats.total}</div></div>
+      <div class="stat"><div class="stat-lbl">Live Listings</div><div class="stat-val" style="color:var(--green)">${stats.listed}</div></div>
+      <div class="stat"><div class="stat-lbl">Sold</div><div class="stat-val" style="color:var(--gold)">${stats.sold}</div></div>
+      <div class="stat"><div class="stat-lbl">Pending Auth</div><div class="stat-val" style="color:var(--amber)">${stats.pending}</div></div>
+    </div>
+    <div class="row-b" style="margin-bottom:14px"><div class="stitle" style="margin-bottom:0">All Items</div><button class="btn btn-gold" onclick="showPage('submit-item')">+ Submit New Item</button></div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>Item</th><th>Price</th><th>Status</th><th>Photos</th><th>Actions</th></tr></thead><tbody>
+        ${!items.length?`<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">No items yet</td></tr>`:
+        items.map(p=>`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand} · ${p.cat}</div></td>
+          <td>${fmt(p.price)}</td><td>${sbadge(p.status)}</td>
+          <td><span style="display:flex;gap:4px">${pico(p.p1)}${pico(p.p2)}${pico(p.p3)}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            ${p.status==='listed'?`<button class="btn btn-ghost btn-sm" onclick="showPD('${p.id}')">View</button>`:''}
+            ${p.status==='sold'&&!p.p3?`<button class="btn btn-gold btn-sm" onclick="doP3('${p.id}')">Submit Photo 3</button>`:''}
+            ${p.status==='sold'&&p.p3?`<span style="font-size:11px;color:var(--green)">✓ Dispatched</span>`:''}
+            ${p.status==='pending_auth'?`<span style="font-size:11px;color:var(--amber)">Awaiting auth</span>`:''}
+            ${p.status==='rejected'?`<button class="btn btn-danger btn-sm" onclick="showRej('${p.id}')">See Reason</button>`:''}
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+function doP3(pid){
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="modal-title">Submit Pre-Dispatch Photo</div><div class="modal-sub">Photo 3 is required before the courier can be booked</div>
+    <div style="background:var(--cream2);border-radius:var(--r);padding:32px;text-align:center;margin-bottom:18px;border:1.5px dashed var(--cream3)">
+      <div style="font-size:40px;margin-bottom:12px">📸</div>
+      <div style="font-size:13px;color:var(--ink4)">Upload a clear photo of the item in its current condition</div>
+      <button class="btn btn-outline" style="margin-top:14px" onclick="submitP3('${pid}')">Simulate Upload ✓</button>
+    </div>
+    <div style="font-size:11px;color:var(--ink4);line-height:1.7">Once submitted, the DHL courier booking will be triggered automatically.</div>`);
+}
+function submitP3(pid){
+  DB=getDB();const p=gp(pid);p.p3='done';
+  const o=DB.orders.find(o=>o.pid===pid);if(o)o.status='shipped';
+  save();closeM();notify('Photo submitted! DHL courier booked 📦','ok');rStoreMgr();
+}
+function showRej(pid){
+  const p=gp(pid);
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="modal-title">Authentication Rejected</div><div class="modal-sub">${p.brand} — ${p.name}</div>
+    <div style="background:var(--red-bg);border:0.5px solid rgba(155,58,58,.2);border-radius:var(--r);padding:14px;margin-bottom:16px">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:6px">Rejection Reason</div>
+      <div style="font-size:13px;color:var(--ink2);line-height:1.7">${p.rej}</div>
+    </div>
+    <div style="font-size:12px;color:var(--ink4)">Please collect your item from the auth store. The authentication fee is non-refundable.</div>`);
+}
+
+// ── SUBMIT ITEM ──
+function rSubmitItem(){
+  const m=document.getElementById('main');
+  m.innerHTML=`<div class="page active fade" style="max-width:660px">
+    <div class="slabel">Store Manager</div><div class="page-title" style="margin-bottom:20px">Submit an <em>Item</em></div>
+    <div class="card">
+      <div class="stitle">Item Details</div>
+      <div class="g2">
+        <div class="form-group"><div class="flabel">Brand</div><input class="finput" id="sb" placeholder="e.g. Louis Vuitton" oninput="updFee()"></div>
+        <div class="form-group"><div class="flabel">Item Name</div><input class="finput" id="sn" placeholder="e.g. Neverfull MM Monogram"></div>
+      </div>
+      <div class="g2">
+        <div class="form-group"><div class="flabel">Category</div><select class="fselect" id="sc" onchange="updFee()"><option>Handbags</option><option>Watches</option><option>Sneakers</option><option>Accessories</option></select></div>
+        <div class="form-group"><div class="flabel">Condition</div><select class="fselect" id="sco"><option>Pristine</option><option>Excellent</option><option>Very Good</option><option>Good</option></select></div>
+      </div>
+      <div class="form-group"><div class="flabel">Description</div><textarea class="ftextarea" id="sd" placeholder="Describe the item, provenance, any notable details..."></textarea></div>
+      <div class="form-group"><div class="flabel">Asking Price ($)</div><input class="finput" id="sp" placeholder="0.00" type="number"></div>
+      <div class="form-group"><div class="flabel">Preferred Auth Store</div><select class="fselect" id="ss">${DB.users.filter(u=>u.role==='auth').map(u=>`<option value="${u.id}">${u.av} ${u.name}</option>`).join('')}</select></div>
+      <div class="divider"></div>
+      <div class="card-sm" style="background:var(--amber-bg);border-color:rgba(138,109,45,.2);margin-bottom:12px">
+        <div class="row-b"><div><div class="flabel">Authentication Fee (paid now)</div><div style="font-size:11px;color:var(--ink4);margin-top:2px">Flat rate · Non-refundable</div></div><div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--amber)" id="feedisp">$80</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--ink4);line-height:1.7;margin-bottom:18px;padding:10px;background:var(--cream2);border-radius:var(--r)">After payment: walk to the auth store with your item + booking reference. Take Photo 1 before drop-off. The store will authenticate and contact you via chat.</div>
+      <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn btn-ghost" onclick="showPage('store-mgr')">Cancel</button><button class="btn btn-gold btn-lg" onclick="doSubmit()">Pay & Submit →</button></div>
+    </div>
+  </div>`;
+}
+function updFee(){
+  const cat=document.getElementById('sc').value;
+  const brand=(document.getElementById('sb')?.value||'').trim();
+  const fees=DB.authFeeTable[cat];
+  let fee=60;
+  if(fees){const key=Object.keys(fees).find(k=>brand.toLowerCase().includes(k.toLowerCase()));fee=key?fees[key]:(fees.Other||fees.default||Object.values(fees)[0]);}
+  document.getElementById('feedisp').textContent='$'+fee;
+}
+function doSubmit(){
+  const brand=document.getElementById('sb').value.trim();
+  const name=document.getElementById('sn').value.trim();
+  const price=parseFloat(document.getElementById('sp').value);
+  const cat=document.getElementById('sc').value;
+  const cond=document.getElementById('sco').value;
+  const desc=document.getElementById('sd').value.trim();
+  const storeId=document.getElementById('ss').value;
+  if(!brand||!name||!price||!desc){notify('Please fill all fields','err');return;}
+  DB=getDB();
+  const fees=DB.authFeeTable[cat];
+  let fee=60;
+  if(fees){const key=Object.keys(fees).find(k=>brand.toLowerCase().includes(k.toLowerCase()));fee=key?fees[key]:(fees.Other||fees.default||Object.values(fees)[0]);}
+  const pid='p'+Date.now();
+  DB.products.push({id:pid,sid:user.id,aid:storeId,name,brand,cat,desc,price,fee,cond,status:'pending_auth',p1:'done',p2:null,p3:null,cat_at:new Date().toISOString(),auth_at:null,list_at:null,rating:null});
+  const store=gu(storeId);
+  DB.chats.push({id:'c'+Date.now(),participants:[user.id,storeId],pid,msgs:[{from:storeId,text:`Hi ${user.name.split(' ')[0]}! We've received your ${brand} ${name} submission.\n\nBooking reference: CQ-${pid.slice(-4).toUpperCase()}\n\nPlease drop off the item at our store at your earliest convenience.`,t:new Date().toISOString()}]});
+  save();notify('Item submitted! Check Messages for your booking reference.','ok');showPage('store-mgr');
+}
+
+// ── SELLER EARNINGS ──
+function rSellerEarn(){
+  DB=getDB();const m=document.getElementById('main');
+  const items=DB.products.filter(p=>p.sid===user.id);
+  const sold=items.filter(p=>p.status==='sold');
+  const earned=sold.reduce((s,p)=>s+p.price-(p.fee||0)-Math.round(p.price*DB.fees.platform/100),0);
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Seller Portal</div><div class="page-title" style="margin-bottom:20px">My <em>Earnings</em></div>
+    <div class="stats-row" style="margin-bottom:20px">
+      <div class="stat"><div class="stat-lbl">Total Earned</div><div class="stat-val" style="color:var(--green)">${fmt(earned)}</div><div class="stat-sub">After all fees</div></div>
+      <div class="stat"><div class="stat-lbl">Items Sold</div><div class="stat-val">${sold.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Platform Fee</div><div class="stat-val">${DB.fees.platform}%</div></div>
+      <div class="stat"><div class="stat-lbl">Auth Fees Paid</div><div class="stat-val">${fmt(items.filter(p=>p.status!=='pending_auth').reduce((s,p)=>s+p.fee,0))}</div></div>
+    </div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>Item</th><th>Sale Price</th><th>Auth Fee</th><th>Platform (${DB.fees.platform}%)</th><th>You Receive</th></tr></thead><tbody>
+        ${sold.length?sold.map(p=>{const af=p.fee||0;const pf=Math.round(p.price*DB.fees.platform/100);const net=p.price-af-pf;return`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand}</div></td>
+          <td>${fmt(p.price)}</td><td style="color:var(--red)">-${fmt(af)}</td><td style="color:var(--red)">-${fmt(pf)}</td>
+          <td style="font-weight:600;color:var(--green)">${fmt(net)}</td></tr>`;}).join(''):`<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">No sold items yet</td></tr>`}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+// ── AUTH PANEL ──
+function rAuthPanel(){
+  DB=getDB();const m=document.getElementById('main');
+  const incoming=DB.products.filter(p=>p.aid===user.id&&p.status==='pending_auth');
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Authenticator Panel</div><div class="page-title" style="margin-bottom:20px"><em>Inbound</em> Requests</div>
+    ${!incoming.length?`<div class="empty"><div class="empty-icon">✅</div><div>No pending requests</div></div>`:
+    incoming.map(p=>{const seller=gu(p.sid);return`<div class="card" style="display:flex;gap:18px;align-items:flex-start">
+      <div style="width:68px;height:68px;border-radius:var(--r);background:${pbg(p.cat)};display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0">${pemi(p.cat)}</div>
+      <div style="flex:1">
+        <div class="row" style="margin-bottom:8px"><div style="font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)">${p.brand}</div><span class="badge badge-pending">Pending Auth</span></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:19px;margin-bottom:3px">${p.name}</div>
+        <div style="font-size:12px;color:var(--ink4);margin-bottom:12px">From: ${seller.av} ${seller.name} · ${ago(p.cat_at)}</div>
+        <div class="photo-chain">
+          <div class="pstep ${p.p1?'done':''}"><div class="pstep-img">📸<div class="pstep-num">1</div></div><div class="pstep-body"><div class="pstep-lbl">Seller photo</div><div class="pstep-desc">${p.p1?'Submitted':'Pending'}</div></div></div>
+          <div class="pstep"><div class="pstep-img">🔍<div class="pstep-num">2</div></div><div class="pstep-body"><div class="pstep-lbl">Your photo</div><div class="pstep-desc">After auth</div></div></div>
+          <div class="pstep"><div class="pstep-img">📦<div class="pstep-num">3</div></div><div class="pstep-body"><div class="pstep-lbl">Pre-dispatch</div><div class="pstep-desc">On sale</div></div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+        <button class="btn btn-success" onclick="doAuth('${p.id}')">Authenticate ✓</button>
+        <button class="btn btn-danger" onclick="doReject('${p.id}')">Reject ✕</button>
+      </div>
+    </div>`;}).join('')}
+  </div>`;
+}
+
+function doAuth(pid){
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="modal-title">Authenticate Item</div><div class="modal-sub">Complete assessment and notify the seller</div>
+    <div class="form-group"><div class="flabel">Condition Rating</div><select class="fselect" id="ac"><option>Pristine</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option></select></div>
+    <div class="form-group"><div class="flabel">Authentication Report</div><textarea class="ftextarea" id="ar" placeholder="Describe condition, authentication markers checked, any notable findings..."></textarea></div>
+    <div class="form-group"><div class="flabel">Estimated Market Value ($)</div><input class="finput" id="av" placeholder="0.00" type="number"></div>
+    <div style="background:var(--cream2);border-radius:var(--r);padding:10px;margin-bottom:18px;font-size:11px;color:var(--ink4)">📸 Photo 2 will be attached permanently to the listing on submission.</div>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn btn-ghost" onclick="closeM()">Cancel</button><button class="btn btn-gold" onclick="confirmAuth('${pid}')">Confirm & Notify Seller</button></div>`);
+}
+function confirmAuth(pid){
+  const cond=document.getElementById('ac').value;
+  const report=document.getElementById('ar').value.trim();
+  const val=document.getElementById('av').value;
+  if(!report){notify('Please enter an authentication report','err');return;}
+  DB=getDB();const p=gp(pid);
+  p.status='listed';p.cond=cond;p.rating=report;p.p2='done';p.auth_at=new Date().toISOString();p.list_at=new Date().toISOString();
+  let chat=DB.chats.find(c=>c.pid===pid);
+  if(!chat){chat={id:'c'+Date.now(),participants:[p.sid,user.id],pid,msgs:[]};DB.chats.push(chat);}
+  chat.msgs.push({from:user.id,text:`Authentication complete ✓\n\nCondition: ${cond}\nReport: ${report}${val?'\nEstimated value: '+fmt(val):''}\n\nYour item is now live on Certiq marketplace. Would you like us to keep it in our store or will you take it home?`,t:new Date().toISOString()});
+  save();closeM();notify('Item authenticated & listed! Seller notified via chat.','ok');rAuthPanel();
+}
+
+function doReject(pid){
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="modal-title">Reject Authentication</div><div class="modal-sub">This will close the request and notify the seller to collect the item</div>
+    <div class="form-group"><div class="flabel">Rejection Reason</div><textarea class="ftextarea" id="rr" rows="5" placeholder="Detail why the item cannot be authenticated..."></textarea></div>
+    <div style="background:var(--red-bg);border-radius:var(--r);padding:10px;margin-bottom:18px;font-size:11px;color:var(--red)">The authentication fee is non-refundable. Seller will be notified to collect the item.</div>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn btn-ghost" onclick="closeM()">Cancel</button><button class="btn btn-danger" onclick="confirmRej('${pid}')">Confirm Rejection</button></div>`);
+}
+function confirmRej(pid){
+  const reason=document.getElementById('rr').value.trim();
+  if(!reason){notify('Please enter a rejection reason','err');return;}
+  DB=getDB();const p=gp(pid);
+  p.status='rejected';p.p2='done';p.rej_at=new Date().toISOString();p.rej=reason;
+  let chat=DB.chats.find(c=>c.pid===pid);
+  if(!chat){chat={id:'c'+Date.now(),participants:[p.sid,user.id],pid,msgs:[]};DB.chats.push(chat);}
+  chat.msgs.push({from:user.id,text:`We've completed our assessment on your ${p.brand} ${p.name}.\n\nUnfortunately, we cannot authenticate this item.\n\nReason: ${reason}\n\nPlease collect the item at your earliest convenience. The authentication fee is non-refundable per our terms.`,t:new Date().toISOString()});
+  save();closeM();notify('Item rejected. Seller notified.','err');rAuthPanel();
+}
+
+// ── AUTH INVENTORY ──
+function rAuthInv(){
+  DB=getDB();const m=document.getElementById('main');
+  const inv=DB.products.filter(p=>p.aid===user.id&&p.status==='listed');
+  const sold=DB.products.filter(p=>p.aid===user.id&&p.status==='sold');
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Auth Store</div><div class="page-title" style="margin-bottom:20px">My <em>Inventory</em></div>
+    <div class="stats-row" style="margin-bottom:20px">
+      <div class="stat"><div class="stat-lbl">In Storage</div><div class="stat-val">${inv.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Total Value</div><div class="stat-val" style="color:var(--gold)">${fmt(inv.reduce((s,p)=>s+p.price,0))}</div></div>
+      <div class="stat"><div class="stat-lbl">Items Sold</div><div class="stat-val" style="color:var(--green)">${sold.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Storage Cap</div><div class="stat-val">${DB.fees.storage}d</div></div>
+    </div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>Item</th><th>Seller</th><th>Price</th><th>Days Held</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        ${!inv.length?`<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink4)">No items in storage</td></tr>`:
+        inv.map(p=>{const seller=gu(p.sid);const dateStr=p.auth_at||p.cat_at;const days=dateStr?Math.floor((Date.now()-new Date(dateStr).getTime())/86400000):0;const near=days>(DB.fees.storage*.75);
+        return`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand}</div></td>
+          <td>${seller.av} ${seller.name}</td><td>${fmt(p.price)}</td>
+          <td><span style="color:${near?'var(--red)':'var(--ink3)'};font-weight:${near?600:400}">${days}d${near?' ⚠️':''}</span></td>
+          <td><span class="badge badge-listed">Listed</span></td>
+          <td>${days>=DB.fees.storage?`<button class="btn btn-danger btn-sm" onclick="triggerExp('${p.id}')">Notify Seller</button>`:''}</td>
+        </tr>`;}).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+function triggerExp(pid){
+  DB=getDB();const p=gp(pid);const seller=gu(p.sid);
+  let chat=DB.chats.find(c=>c.pid===pid);
+  if(!chat){chat={id:'c'+Date.now(),participants:[p.sid,user.id],pid,msgs:[]};DB.chats.push(chat);}
+  chat.msgs.push({from:user.id,text:`Hi ${seller.name.split(' ')[0]}, your ${p.brand} ${p.name} has reached our ${DB.fees.storage}-day storage limit.\n\nPlease collect the item at your convenience. Your listing will remain live on Certiq — once collected, dispatch will come from your address.`,t:new Date().toISOString()});
+  save();notify('Seller notified to collect. Pickup address will switch to seller.','ok');rAuthInv();
+}
+
+// ── AUTH OWN LISTINGS ──
+function rAuthListings(){
+  DB=getDB();const m=document.getElementById('main');
+  const items=DB.products.filter(p=>p.sid===user.id&&p.authSource==='store_owned');
+  const stats={total:items.length,listed:items.filter(p=>p.status==='listed').length,sold:items.filter(p=>p.status==='sold').length};
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Auth Store</div><div class="page-title" style="margin-bottom:20px">My <em>Listings</em></div>
+    <div class="stats-row" style="margin-bottom:20px">
+      <div class="stat"><div class="stat-lbl">Total Listed</div><div class="stat-val">${stats.total}</div></div>
+      <div class="stat"><div class="stat-lbl">Live</div><div class="stat-val" style="color:var(--green)">${stats.listed}</div></div>
+      <div class="stat"><div class="stat-lbl">Sold</div><div class="stat-val" style="color:var(--gold)">${stats.sold}</div></div>
+      <div class="stat"><div class="stat-lbl">Revenue</div><div class="stat-val" style="color:var(--green);font-size:22px">${fmt(items.filter(p=>p.status==='sold').reduce((s,p)=>s+p.price-Math.round(p.price*DB.fees.platform/100),0))}</div></div>
+    </div>
+    <div class="row-b" style="margin-bottom:14px"><div class="stitle" style="margin-bottom:0">Items for Sale</div><button class="btn btn-gold" onclick="showPage('auth-list-item')">+ List New Item</button></div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>Item</th><th>Price</th><th>Status</th><th>Photos</th><th>Actions</th></tr></thead><tbody>
+        ${!items.length?`<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink4)">No items listed yet. Add your first item →</td></tr>`:
+        items.map(p=>`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand} · ${p.cat}</div></td>
+          <td>${fmt(p.price)}</td><td>${sbadge(p.status)}</td>
+          <td><span style="display:flex;gap:4px">${pico(p.p1)}${pico(p.p2)}${pico(p.p3)}</span></td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center">
+              ${p.status==='listed'?`<button class="btn btn-ghost btn-sm" onclick="showPD('${p.id}')">View</button>`:''}
+              ${p.status==='sold'&&!p.p3?`<button class="btn btn-gold btn-sm" onclick="doP3auth('${p.id}')">Submit Photo 3</button>`:''}
+              ${p.status==='sold'&&p.p3?`<span style="font-size:11px;color:var(--green)">✓ Dispatched</span>`:''}
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+function rAuthListItem(){
+  DB=getDB();const m=document.getElementById('main');
+  m.innerHTML=`<div class="page active fade" style="max-width:660px">
+    <div class="slabel">Auth Store</div><div class="page-title" style="margin-bottom:20px">List an <em>Item</em></div>
+    <div class="card">
+      <div class="stitle">Item Details</div>
+      <div class="g2">
+        <div class="form-group"><div class="flabel">Brand</div><input class="finput" id="alb" placeholder="e.g. Louis Vuitton"></div>
+        <div class="form-group"><div class="flabel">Item Name</div><input class="finput" id="aln" placeholder="e.g. Neverfull MM Monogram"></div>
+      </div>
+      <div class="g2">
+        <div class="form-group"><div class="flabel">Category</div><select class="fselect" id="alc"><option>Handbags</option><option>Watches</option><option>Sneakers</option><option>Accessories</option></select></div>
+        <div class="form-group"><div class="flabel">Condition</div><select class="fselect" id="alco"><option>Pristine</option><option>Excellent</option><option>Very Good</option><option>Good</option></select></div>
+      </div>
+      <div class="form-group"><div class="flabel">Description</div><textarea class="ftextarea" id="ald" placeholder="Describe the item, provenance, any notable details..."></textarea></div>
+      <div class="form-group"><div class="flabel">Authentication Report</div><textarea class="ftextarea" id="alar" placeholder="Your in-house assessment — condition markers, authenticity notes..."></textarea></div>
+      <div class="form-group"><div class="flabel">Asking Price ($)</div><input class="finput" id="alp" placeholder="0.00" type="number"></div>
+      <div class="divider"></div>
+      <div class="card-sm" style="background:var(--green-bg);border-color:rgba(61,122,90,.2);margin-bottom:14px">
+        <div class="row" style="gap:10px">
+          <div style="font-size:22px">✅</div>
+          <div><div class="flabel" style="color:var(--green)">Self-authenticated</div><div style="font-size:12px;color:var(--ink4);margin-top:2px">Items listed by your store go live immediately. No auth fee — your store's credibility is the authentication.</div></div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;gap:8px"><button class="btn btn-ghost" onclick="showPage('auth-listings')">Cancel</button><button class="btn btn-gold btn-lg" onclick="doAuthList()">List Item →</button></div>
+    </div>
+  </div>`;
+}
+
+function doAuthList(){
+  const brand=document.getElementById('alb').value.trim();
+  const name=document.getElementById('aln').value.trim();
+  const price=parseFloat(document.getElementById('alp').value);
+  const cat=document.getElementById('alc').value;
+  const cond=document.getElementById('alco').value;
+  const desc=document.getElementById('ald').value.trim();
+  const report=document.getElementById('alar').value.trim();
+  if(!brand||!name||!price||!desc||!report){notify('Please fill all fields','err');return;}
+  DB=getDB();
+  const now=new Date().toISOString();
+  const pid='p'+Date.now();
+  DB.products.push({
+    id:pid,sid:user.id,aid:user.id,name,brand,cat,desc,price,
+    fee:0,cond,status:'listed',
+    p1:'done',p2:'done',p3:null,
+    cat_at:now,auth_at:now,list_at:now,
+    rating:report,
+    authSource:'store_owned'
+  });
+  save();notify('Item listed! It\'s live on the marketplace now.','ok');showPage('auth-listings');
+}
+
+function doP3auth(pid){
+  openM(`<button class="modal-close" onclick="closeM()">✕</button>
+    <div class="modal-title">Submit Pre-Dispatch Photo</div><div class="modal-sub">Photo 3 is required before the courier can be booked</div>
+    <div style="background:var(--cream2);border-radius:var(--r);padding:32px;text-align:center;margin-bottom:18px;border:1.5px dashed var(--cream3)">
+      <div style="font-size:40px;margin-bottom:12px">📸</div>
+      <div style="font-size:13px;color:var(--ink4)">Upload a clear photo of the item in its current condition</div>
+      <button class="btn btn-outline" style="margin-top:14px" onclick="submitP3auth('${pid}')">Simulate Upload ✓</button>
+    </div>
+    <div style="font-size:11px;color:var(--ink4);line-height:1.7">Once submitted, the DHL courier booking will be triggered automatically.</div>`);
+}
+function submitP3auth(pid){
+  DB=getDB();const p=gp(pid);p.p3='done';
+  const o=DB.orders.find(o=>o.pid===pid);if(o)o.status='shipped';
+  save();closeM();notify('Photo submitted! DHL courier booked 📦','ok');rAuthListings();
+}
+
+// ── AUTH EARNINGS ──
+function rAuthEarn(){
+  DB=getDB();const m=document.getElementById('main');
+  // Consignment: items from individual sellers authenticated by this store
+  const consignment=DB.products.filter(p=>p.aid===user.id&&p.status!=='pending_auth'&&p.sid!==user.id);
+  const consignSold=consignment.filter(p=>p.status==='sold');
+  const authFees=consignment.reduce((s,p)=>s+p.fee,0);
+  const profitShare=consignSold.reduce((s,p)=>s+Math.round(p.price*DB.fees.authStore/100),0);
+  // Own listings: items the store listed themselves
+  const ownItems=DB.products.filter(p=>p.sid===user.id&&p.authSource==='store_owned');
+  const ownSold=ownItems.filter(p=>p.status==='sold');
+  const ownRevenue=ownSold.reduce((s,p)=>s+p.price-Math.round(p.price*DB.fees.platform/100),0);
+  const totalRev=authFees+profitShare+ownRevenue;
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Auth Store</div><div class="page-title" style="margin-bottom:20px">My <em>Earnings</em></div>
+    <div class="stats-row" style="margin-bottom:24px">
+      <div class="stat"><div class="stat-lbl">Auth Fees</div><div class="stat-val" style="color:var(--green)">${fmt(authFees)}</div><div class="stat-sub">Guaranteed</div></div>
+      <div class="stat"><div class="stat-lbl">Profit Share</div><div class="stat-val" style="color:var(--gold)">${fmt(profitShare)}</div><div class="stat-sub">${DB.fees.authStore}% per consign sale</div></div>
+      <div class="stat"><div class="stat-lbl">Own Sales</div><div class="stat-val" style="color:var(--blue)">${fmt(ownRevenue)}</div><div class="stat-sub">After ${DB.fees.platform}% platform fee</div></div>
+      <div class="stat"><div class="stat-lbl">Total Revenue</div><div class="stat-val">${fmt(totalRev)}</div></div>
+    </div>
+
+    <div class="slabel" style="margin-bottom:8px">Consignment — Auth Fees & Profit Share</div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px">
+      <table class="table"><thead><tr><th>Item</th><th>Auth Fee</th><th>Sale Price</th><th>Your Share (${DB.fees.authStore}%)</th><th>Status</th></tr></thead><tbody>
+        ${!consignment.length?`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--ink4)">No consignment items processed yet</td></tr>`:
+        consignment.map(p=>`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand}</div></td>
+          <td style="color:var(--green);font-weight:500">+${fmt(p.fee)}</td>
+          <td>${p.status==='sold'?fmt(p.price):'—'}</td>
+          <td style="color:var(--gold);font-weight:500">${p.status==='sold'?'+'+fmt(Math.round(p.price*DB.fees.authStore/100)):'—'}</td>
+          <td>${sbadge(p.status)}</td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>
+
+    <div class="slabel" style="margin-bottom:8px">Own Listings — Direct Sales</div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>Item</th><th>Sale Price</th><th>Platform (${DB.fees.platform}%)</th><th>You Receive</th><th>Status</th></tr></thead><tbody>
+        ${!ownItems.length?`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--ink4)">No own items listed yet</td></tr>`:
+        ownItems.map(p=>{const pf=Math.round(p.price*DB.fees.platform/100);const net=p.price-pf;return`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand}</div></td>
+          <td>${p.status==='sold'?fmt(p.price):'—'}</td>
+          <td style="color:var(--red)">${p.status==='sold'?'-'+fmt(pf):'—'}</td>
+          <td style="color:var(--green);font-weight:500">${p.status==='sold'?'+'+fmt(net):'—'}</td>
+          <td>${sbadge(p.status)}</td>
+        </tr>`;}).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+// ── CHAT ──
+function rChat(ctx){
+  DB=getDB();const m=document.getElementById('main');
+  const myChats=DB.chats.filter(c=>c.participants.includes(user.id));
+  m.innerHTML=`<div class="chat-layout fade">
+    <div class="chat-list-panel">
+      <div style="padding:14px;border-bottom:0.5px solid var(--cream3)"><div style="font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)">Messages</div></div>
+      ${!myChats.length?`<div style="padding:24px 16px;text-align:center;color:var(--ink4);font-size:12px;line-height:1.7">${role==='buyer'?'Seller ↔ auth store chat only in this version. Buyer messaging coming soon.':'No conversations yet.'}</div>`:
+      myChats.map(c=>{const other=c.participants.find(id=>id!==user.id);const ou=gu(other);const last=c.msgs[c.msgs.length-1];const prod=gp(c.pid);
+      return`<div class="cli ${chatId===c.id?'active':''}" data-cid="${c.id}" onclick="openChat('${c.id}')">
+        <div class="cavatar">${ou?.av||'👤'}</div>
+        <div class="cli-info"><div class="cli-name">${ou?.name||'Unknown'}</div><div class="cli-preview">${prod?.brand} ${prod?.name}</div><div class="cli-preview" style="margin-top:1px">${last?.text?.substring(0,38)+'…'||''}</div></div>
+        <div class="cli-time">${last?ago(last.t):''}</div>
+      </div>`;}).join('')}
+    </div>
+    <div class="chat-main-panel" id="cmain">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--ink4);font-size:13px">Select a conversation</div>
+    </div>
+  </div>`;
+  if(chatId&&DB.chats.find(c=>c.id===chatId&&c.participants.includes(user.id)))openChat(chatId);
+  else if(myChats.length)openChat(myChats[0].id);
+}
+
+function openChat(cid){
+  DB=getDB();chatId=cid;
+  const chat=DB.chats.find(c=>c.id===cid);if(!chat)return;
+  if(!chat.participants.includes(user.id))return;
+  const other=chat.participants.find(id=>id!==user.id);
+  const ou=gu(other);const prod=gp(chat.pid);
+  document.querySelectorAll('.cli').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.cli').forEach(el=>{if(el.dataset.cid===cid)el.classList.add('active');});
+  const panel=document.getElementById('cmain');
+  panel.innerHTML=`
+    <div class="chat-header">
+      <div class="cavatar">${ou?.av||'👤'}</div>
+      <div><div style="font-size:13px;font-weight:500">${ou?.name||'Unknown'}</div><div style="font-size:11px;color:var(--ink4)">${prod?.brand||''} ${prod?.name||''}</div></div>
+      <div style="margin-left:auto">${prod?sbadge(prod.status):''}</div>
+    </div>
+    <div class="chat-messages" id="cmsgs">
+      ${chat.msgs.map(msg=>{const mine=msg.from===user.id;return`<div class="bubble ${mine?'mine':'theirs'}">${msg.text}<div style="font-size:10px;opacity:.55;margin-top:4px;text-align:right">${ago(msg.t)}</div></div>`;}).join('')}
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" placeholder="Type a message…" id="cinput" onkeydown="if(event.key==='Enter')sendMsg('${cid}')">
+      <button class="btn btn-primary" onclick="sendMsg('${cid}')">Send</button>
+    </div>`;
+  const msgs=document.getElementById('cmsgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;
+}
+
+function sendMsg(cid){
+  const inp=document.getElementById('cinput');
+  const text=inp.value.trim();if(!text)return;
+  DB=getDB();const chat=DB.chats.find(c=>c.id===cid);if(!chat)return;
+  chat.msgs.push({from:user.id,text,t:new Date().toISOString()});
+  save();inp.value='';openChat(cid);
+}
+
+// ── ADMIN ──
+function rAdmOverview(){
+  DB=getDB();const m=document.getElementById('main');
+  const gmv=DB.products.filter(p=>p.status==='sold').reduce((s,p)=>s+p.price,0);
+  const rev=Math.floor(gmv*DB.fees.platform/100);
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Admin Panel</div><div class="page-title" style="margin-bottom:20px">Platform <em>Overview</em></div>
+    <div class="stats-row" style="margin-bottom:20px">
+      <div class="stat"><div class="stat-lbl">Total GMV</div><div class="stat-val" style="color:var(--gold)">${fmt(gmv)}</div></div>
+      <div class="stat"><div class="stat-lbl">Platform Revenue</div><div class="stat-val" style="color:var(--green)">${fmt(rev)}</div><div class="stat-sub">${DB.fees.platform}% take rate</div></div>
+      <div class="stat"><div class="stat-lbl">Total Users</div><div class="stat-val">${DB.users.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Active Listings</div><div class="stat-val">${DB.products.filter(p=>p.status==='listed').length}</div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="stitle">Product Status</div>
+        ${['listed','pending_auth','sold','rejected'].map(s=>{const cnt=DB.products.filter(p=>p.status===s).length;const pct=Math.round(cnt/DB.products.length*100);return`<div class="row-b" style="margin-bottom:8px;font-size:13px"><div>${sbadge(s)}</div><div style="font-weight:500">${cnt} <span style="color:var(--ink4);font-weight:400">(${pct}%)</span></div></div>`;}).join('')}
+      </div>
+      <div class="card"><div class="stitle">Auth Stores</div>
+        ${DB.users.filter(u=>u.role==='auth').map(u=>{const done=DB.products.filter(p=>p.aid===u.id&&p.status!=='pending_auth').length;const pend=DB.products.filter(p=>p.aid===u.id&&p.status==='pending_auth').length;return`<div class="card-sm" style="display:flex;gap:12px;align-items:center;margin-bottom:8px"><div class="avatar">${u.av}</div><div style="flex:1"><div style="font-weight:500;font-size:13px">${u.name}</div><div style="font-size:11px;color:var(--ink4)">${done} authed · ${pend} pending</div></div><span class="badge badge-auth">Active</span></div>`;}).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function rAdmUsers(){
+  DB=getDB();const m=document.getElementById('main');
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Admin</div><div class="page-title" style="margin-bottom:20px">All <em>Users</em></div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>User</th><th>Role</th><th>Email</th><th>Joined</th><th>Activity</th></tr></thead><tbody>
+        ${DB.users.map(u=>{const rc={buyer:'badge-sold',seller:'badge-listed',auth:'badge-plain',admin:'badge-pending'};const items=u.role==='seller'?DB.products.filter(p=>p.sid===u.id).length:u.role==='auth'?DB.products.filter(p=>p.aid===u.id).length:u.role==='buyer'?(DB.orders||[]).filter(o=>o.bid===u.id).length:0;return`<tr>
+          <td><div class="row" style="gap:8px"><div class="avatar">${u.av||'?'}</div><div style="font-weight:500">${u.name}</div></div></td>
+          <td><span class="badge ${rc[u.role]||'badge-pending'}">${u.role}</span></td>
+          <td style="color:var(--ink4)">${u.email||'—'}</td>
+          <td style="color:var(--ink4)">${u.at?ago(u.at):'—'}</td>
+          <td style="color:var(--ink3)">${u.role==='admin'?'—':items+' '+(u.role==='buyer'?'orders':u.role==='seller'?'items':'jobs')}</td>
+        </tr>`;}).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+function rAdmProducts(){
+  DB=getDB();const m=document.getElementById('main');
+  m.innerHTML=`<div class="page active fade">
+    <div class="slabel">Admin</div><div class="page-title" style="margin-bottom:20px">All <em>Products</em></div>
+    <div style="background:#fff;border:0.5px solid var(--cream3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow)">
+      <table class="table"><thead><tr><th>Item</th><th>Seller</th><th>Auth Store</th><th>Price</th><th>Status</th><th>Photos</th></tr></thead><tbody>
+        ${DB.products.map(p=>{const s=gu(p.sid);const a=gu(p.aid);return`<tr>
+          <td><div style="font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--ink4)">${p.brand} · ${p.cat}</div></td>
+          <td style="font-size:12px">${s?.av} ${s?.name}</td>
+          <td style="font-size:12px">${a?.av} ${a?.name}</td>
+          <td>${fmt(p.price)}</td><td>${sbadge(p.status)}</td>
+          <td><span style="display:flex;gap:4px">${pico(p.p1)}${pico(p.p2)}${pico(p.p3)}</span></td>
+        </tr>`;}).join('')}
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+function rAdmConfig(){
+  DB=getDB();const m=document.getElementById('main');
+  m.innerHTML=`<div class="page active fade" style="max-width:640px">
+    <div class="slabel">Admin</div><div class="page-title" style="margin-bottom:20px">Platform <em>Config</em></div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="stitle">Fee Structure</div>
+      <div class="g2">
+        <div class="form-group"><div class="flabel">Platform Take Rate (%)</div><input class="finput" id="cpf" type="number" value="${DB.fees.platform}"></div>
+        <div class="form-group"><div class="flabel">Auth Store Profit Share (%)</div><input class="finput" id="caf" type="number" value="${DB.fees.authStore}"></div>
+        <div class="form-group"><div class="flabel">Storage Cap (days)</div><input class="finput" id="csd" type="number" value="${DB.fees.storage}"></div>
+      </div>
+      <button class="btn btn-gold" onclick="saveConfig()">Save Changes</button>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="stitle">Auth Fee Table</div>
+      ${Object.entries(DB.authFeeTable).map(([cat,brands])=>`<div style="margin-bottom:14px"><div class="flabel" style="margin-bottom:8px">${cat}</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">${Object.entries(brands).map(([brand,fee])=>`<div class="card-sm row-b"><span style="font-size:12px">${brand}</span><span style="font-weight:600;color:var(--gold)">${fmt(fee)}</span></div>`).join('')}</div></div>`).join('')}
+    </div>
+    <div class="card" style="border-color:rgba(155,58,58,.2);background:var(--red-bg)">
+      <div class="stitle" style="color:var(--red)">Danger Zone</div>
+      <div style="font-size:13px;color:var(--ink4);margin-bottom:14px">Reset all prototype data back to seed defaults.</div>
+      <button class="btn btn-danger" onclick="if(confirm('Reset all data to defaults?'))resetDB()">Reset Prototype Data</button>
+    </div>
+  </div>`;
+}
+function saveConfig(){
+  DB=getDB();
+  DB.fees.platform=parseFloat(document.getElementById('cpf').value)||8;
+  DB.fees.authStore=parseFloat(document.getElementById('caf').value)||12;
+  DB.fees.storage=parseInt(document.getElementById('csd').value)||90;
+  save();notify('Config saved!','ok');
+}
+</script>
+</body>
+</html>
